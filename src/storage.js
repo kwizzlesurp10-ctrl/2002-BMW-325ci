@@ -3,7 +3,10 @@
 const fs = require('fs');
 const path = require('path');
 
-const DATA_DIR = path.join(__dirname, '..', 'data');
+// On Vercel the project root is read-only; fall back to /tmp for writable storage.
+const DATA_DIR = process.env.VERCEL
+  ? '/tmp/maintenance-tracker'
+  : path.join(__dirname, '..', 'data');
 const DATA_FILE = path.join(DATA_DIR, 'maintenance.json');
 
 /**
