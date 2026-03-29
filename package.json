@@ -1,0 +1,16 @@
+{
+  "name": "2002-bmw-325ci-maintenance-tracker",
+  "version": "1.0.0",
+  "description": "Maintenance tracker for the 2002 BMW 325ci (E46 chassis)",
+  "main": "src/index.js",
+  "scripts": {
+    "start": "node src/index.js",
+    "test": "node --test test/tracker.test.js"
+  },
+  "keywords": ["bmw", "e46", "325ci", "maintenance", "tracker"],
+  "author": "kwizzlesurp10-ctrl",
+  "license": "MIT",
+  "engines": {
+    "node": ">=16.0.0"
+  }
+}
