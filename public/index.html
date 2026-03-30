@@ -1,0 +1,412 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>2002 BMW 325ci — Maintenance Tracker</title>
+  <style>
+    :root {
+      --blue: #1c69d4;
+      --dark: #111827;
+      --mid:  #374151;
+      --light: #f9fafb;
+      --border: #e5e7eb;
+      --red:  #dc2626;
+      --orange: #d97706;
+      --green: #16a34a;
+      --radius: 8px;
+    }
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: system-ui, -apple-system, sans-serif;
+      background: var(--light);
+      color: var(--dark);
+      min-height: 100vh;
+    }
+    header {
+      background: var(--dark);
+      color: #fff;
+      padding: 1rem 1.5rem;
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+    }
+    header h1 { font-size: 1.25rem; font-weight: 700; }
+    header span { font-size: 0.875rem; color: #9ca3af; }
+    .container { max-width: 960px; margin: 0 auto; padding: 1.5rem; }
+    .card {
+      background: #fff;
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 1.25rem;
+      margin-bottom: 1.5rem;
+    }
+    .card h2 {
+      font-size: 1rem;
+      font-weight: 600;
+      margin-bottom: 1rem;
+      color: var(--mid);
+      text-transform: uppercase;
+      letter-spacing: .05em;
+    }
+    /* Mileage row */
+    .mileage-row {
+      display: flex;
+      gap: .75rem;
+      align-items: flex-end;
+      flex-wrap: wrap;
+    }
+    .field { display: flex; flex-direction: column; gap: .25rem; }
+    .field label { font-size: .8rem; font-weight: 600; color: var(--mid); }
+    input[type="number"], input[type="text"], input[type="date"], select, textarea {
+      padding: .5rem .75rem;
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      font-size: .9rem;
+      font-family: inherit;
+      outline: none;
+      transition: border-color .15s;
+    }
+    input:focus, select:focus, textarea:focus { border-color: var(--blue); }
+    button {
+      padding: .5rem 1.1rem;
+      border: none;
+      border-radius: var(--radius);
+      font-size: .9rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: opacity .15s;
+    }
+    button:hover { opacity: .85; }
+    .btn-primary { background: var(--blue); color: #fff; }
+    .btn-danger  { background: var(--red);  color: #fff; padding: .3rem .7rem; font-size: .8rem; }
+    /* Table */
+    .table-wrap { overflow-x: auto; }
+    table { width: 100%; border-collapse: collapse; font-size: .875rem; }
+    th {
+      text-align: left;
+      padding: .5rem .75rem;
+      background: var(--light);
+      border-bottom: 2px solid var(--border);
+      font-weight: 600;
+      color: var(--mid);
+      white-space: nowrap;
+    }
+    td { padding: .5rem .75rem; border-bottom: 1px solid var(--border); vertical-align: middle; }
+    tr:last-child td { border-bottom: none; }
+    /* Status badges */
+    .badge {
+      display: inline-block;
+      padding: .15rem .5rem;
+      border-radius: 9999px;
+      font-size: .75rem;
+      font-weight: 700;
+    }
+    .badge-red    { background: #fee2e2; color: var(--red); }
+    .badge-orange { background: #fef3c7; color: var(--orange); }
+    .badge-green  { background: #dcfce7; color: var(--green); }
+    /* Form grid */
+    .form-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: .75rem;
+    }
+    .form-grid .full { grid-column: 1 / -1; }
+    textarea { resize: vertical; }
+    .error { color: var(--red); font-size: .85rem; margin-top: .5rem; }
+    .empty  { color: #9ca3af; font-style: italic; padding: .5rem 0; }
+    /* Note */
+    .note {
+      font-size: .8rem;
+      color: #9ca3af;
+      margin-top: .75rem;
+      padding: .5rem .75rem;
+      background: var(--light);
+      border-radius: var(--radius);
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <div>
+      <h1>🔧 2002 BMW 325ci — Maintenance Tracker</h1>
+      <span>E46 · M54B25 Inline-6 · 184 hp</span>
+    </div>
+  </header>
+
+  <div class="container">
+
+    <!-- ── Current Mileage ──────────────────────────────────────────── -->
+    <div class="card">
+      <h2>Check Upcoming Services</h2>
+      <div class="mileage-row">
+        <div class="field">
+          <label for="mileage-input">Current Mileage</label>
+          <input id="mileage-input" type="number" min="0" step="1"
+                 placeholder="e.g. 145000" style="width:180px" />
+        </div>
+        <button class="btn-primary" onclick="loadUpcoming()">Check</button>
+      </div>
+      <div id="upcoming-section" style="margin-top:1rem"></div>
+    </div>
+
+    <!-- ── Add Record ──────────────────────────────────────────────── -->
+    <div class="card">
+      <h2>Add Maintenance Record</h2>
+      <form id="add-form" onsubmit="submitRecord(event)">
+        <div class="form-grid">
+          <div class="field full">
+            <label for="service-select">Service</label>
+            <select id="service-select" onchange="onServiceChange()"></select>
+          </div>
+          <div class="field full" id="custom-name-row" style="display:none">
+            <label for="custom-name">Custom Service Name</label>
+            <input id="custom-name" type="text" placeholder="Enter service name" />
+          </div>
+          <div class="field">
+            <label for="record-mileage">Mileage</label>
+            <input id="record-mileage" type="number" min="0" step="1" placeholder="e.g. 145000" required />
+          </div>
+          <div class="field">
+            <label for="record-date">Date</label>
+            <input id="record-date" type="date" required />
+          </div>
+          <div class="field full">
+            <label for="record-notes">Notes (optional)</label>
+            <textarea id="record-notes" rows="2" placeholder="e.g. Used Mobil 1 5W-30"></textarea>
+          </div>
+        </div>
+        <div id="add-error" class="error"></div>
+        <button class="btn-primary" type="submit" style="margin-top:.75rem">Save Record</button>
+      </form>
+    </div>
+
+    <!-- ── Service History ─────────────────────────────────────────── -->
+    <div class="card">
+      <h2>Service History</h2>
+      <div id="history-section"><p class="empty">Loading…</p></div>
+    </div>
+
+  </div>
+
+  <script>
+    // ── Helpers ──────────────────────────────────────────────────────
+
+    const today = () => new Date().toISOString().slice(0, 10);
+
+    function fmtMiles(n) {
+      if (n === null || n === undefined) return '—';
+      if (n <= 0) return `OVERDUE (${Math.abs(n).toLocaleString()} mi ago)`;
+      return `in ${n.toLocaleString()} mi`;
+    }
+
+    function fmtDays(n) {
+      if (n === null || n === undefined) return '—';
+      if (n <= 0) return `OVERDUE (${Math.abs(n)} days ago)`;
+      return `in ${n} days`;
+    }
+
+    function statusBadge(s) {
+      if (s.overdue)  return '<span class="badge badge-red">OVERDUE</span>';
+      if (s.dueSoon)  return '<span class="badge badge-orange">DUE SOON</span>';
+      return '<span class="badge badge-green">OK</span>';
+    }
+
+    // ── Load service intervals into the add-form select ──────────────
+
+    let intervals = [];
+
+    async function loadIntervals() {
+      try {
+        const res = await fetch('/api/intervals');
+        intervals = await res.json();
+        const sel = document.getElementById('service-select');
+        sel.innerHTML =
+          intervals.map((s, i) =>
+            `<option value="${i}">${s.name}</option>`
+          ).join('') +
+          '<option value="custom">Custom…</option>';
+      } catch (e) {
+        console.error('Failed to load intervals', e);
+      }
+    }
+
+    function onServiceChange() {
+      const val = document.getElementById('service-select').value;
+      document.getElementById('custom-name-row').style.display =
+        val === 'custom' ? '' : 'none';
+    }
+
+    // ── Upcoming services ────────────────────────────────────────────
+
+    async function loadUpcoming() {
+      const mileageEl = document.getElementById('mileage-input');
+      const mileage = parseInt(mileageEl.value, 10);
+      if (isNaN(mileage) || mileage < 0) {
+        document.getElementById('upcoming-section').innerHTML =
+          '<p class="error">Please enter a valid mileage.</p>';
+        return;
+      }
+
+      document.getElementById('upcoming-section').innerHTML = '<p class="empty">Loading…</p>';
+
+      try {
+        const res = await fetch(`/api/upcoming?mileage=${mileage}`);
+        const services = await res.json();
+
+        if (!Array.isArray(services) || services.length === 0) {
+          document.getElementById('upcoming-section').innerHTML =
+            '<p class="empty">No service data available.</p>';
+          return;
+        }
+
+        document.getElementById('upcoming-section').innerHTML = `
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th>Service</th>
+                  <th>Status</th>
+                  <th>Last Done</th>
+                  <th>Miles</th>
+                  <th>Time</th>
+                </tr>
+              </thead>
+              <tbody>
+                ${services.map(s => `
+                  <tr>
+                    <td>${s.serviceName}</td>
+                    <td>${statusBadge(s)}</td>
+                    <td>${s.lastServiceDate || '<span style="color:#9ca3af">Never</span>'}</td>
+                    <td>${fmtMiles(s.milesUntilDue)}</td>
+                    <td>${fmtDays(s.daysUntilDue)}</td>
+                  </tr>
+                `).join('')}
+              </tbody>
+            </table>
+          </div>`;
+      } catch (e) {
+        document.getElementById('upcoming-section').innerHTML =
+          '<p class="error">Failed to load upcoming services.</p>';
+      }
+    }
+
+    // ── Service history ──────────────────────────────────────────────
+
+    async function loadHistory() {
+      document.getElementById('history-section').innerHTML = '<p class="empty">Loading…</p>';
+      try {
+        const res = await fetch('/api/records');
+        const records = await res.json();
+
+        if (!Array.isArray(records) || records.length === 0) {
+          document.getElementById('history-section').innerHTML =
+            '<p class="empty">No maintenance records yet. Add one above!</p>';
+          return;
+        }
+
+        document.getElementById('history-section').innerHTML = `
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th>Date</th>
+                  <th>Mileage</th>
+                  <th>Service</th>
+                  <th>Notes</th>
+                  <th></th>
+                </tr>
+              </thead>
+              <tbody>
+                ${records.map(r => `
+                  <tr id="row-${r.id}">
+                    <td>${r.date}</td>
+                    <td>${r.mileage.toLocaleString()}</td>
+                    <td>${r.serviceName}</td>
+                    <td style="color:#6b7280">${r.notes || ''}</td>
+                    <td>
+                      <button class="btn-danger" onclick="deleteRecord('${r.id}')">Delete</button>
+                    </td>
+                  </tr>
+                `).join('')}
+              </tbody>
+            </table>
+          </div>
+          <p class="note">⚠️ Records are saved to <code>/tmp</code> on the serverless host. Data is not guaranteed to persist between deployments or when idle serverless instances are replaced.</p>`;
+      } catch (e) {
+        document.getElementById('history-section').innerHTML =
+          '<p class="error">Failed to load history.</p>';
+      }
+    }
+
+    // ── Add record ───────────────────────────────────────────────────
+
+    async function submitRecord(e) {
+      e.preventDefault();
+      document.getElementById('add-error').textContent = '';
+
+      const selVal = document.getElementById('service-select').value;
+      let serviceId, serviceName;
+      if (selVal === 'custom') {
+        serviceId = 'custom';
+        serviceName = document.getElementById('custom-name').value.trim();
+        if (!serviceName) {
+          document.getElementById('add-error').textContent = 'Please enter a service name.';
+          return;
+        }
+      } else {
+        const interval = intervals[parseInt(selVal, 10)];
+        serviceId = interval.id;
+        serviceName = interval.name;
+      }
+
+      const mileage = parseInt(document.getElementById('record-mileage').value, 10);
+      const date    = document.getElementById('record-date').value;
+      const notes   = document.getElementById('record-notes').value.trim();
+
+      try {
+        const res = await fetch('/api/records', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ serviceId, serviceName, mileage, date, notes }),
+        });
+        const data = await res.json();
+        if (!res.ok) {
+          document.getElementById('add-error').textContent = data.error || 'Error saving record.';
+          return;
+        }
+        // Reset form
+        document.getElementById('add-form').reset();
+        document.getElementById('custom-name-row').style.display = 'none';
+        // Refresh history
+        loadHistory();
+      } catch (err) {
+        document.getElementById('add-error').textContent = 'Network error. Please try again.';
+      }
+    }
+
+    // ── Delete record ────────────────────────────────────────────────
+
+    async function deleteRecord(id) {
+      if (!confirm('Delete this record?')) return;
+      try {
+        const res = await fetch(`/api/records?id=${encodeURIComponent(id)}`, { method: 'DELETE' });
+        if (res.ok) {
+          const row = document.getElementById(`row-${id}`);
+          if (row) row.remove();
+        } else {
+          alert('Failed to delete record.');
+        }
+      } catch (e) {
+        alert('Network error.');
+      }
+    }
+
+    // ── Init ─────────────────────────────────────────────────────────
+
+    document.getElementById('record-date').value = today();
+    loadIntervals();
+    loadHistory();
+  </script>
+</body>
+</html>
