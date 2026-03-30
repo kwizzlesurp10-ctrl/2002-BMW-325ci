@@ -1,11 +1,17 @@
 {
   "name": "2002-bmw-325ci-maintenance-tracker",
-  "version": "1.0.0",
-  "description": "Maintenance tracker for the 2002 BMW 325ci (E46 chassis)",
-  "main": "src/index.js",
+  "version": "2.0.0",
+  "description": "Web app for tracking BMW E46 maintenance",
   "scripts": {
-    "start": "node src/index.js",
-    "test": "node --test test/tracker.test.js"
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "cli": "node src/index.js"
+  },
+  "dependencies": {
+    "next": "^14.0.0",
+    "react": "^18.2.0",
+    "react-dom": "^18.2.0"
   },
   "keywords": ["bmw", "e46", "325ci", "maintenance", "tracker"],
   "author": "kwizzlesurp10-ctrl",
